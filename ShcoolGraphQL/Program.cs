@@ -30,7 +30,11 @@ namespace ShcoolGraphQL
                 .AddTypeExtension<StudentMutation>()
                 .AddTypeExtension<CourseMutation>()
                 .AddTypeExtension<DepartmentMutation>()
-                .AddInMemorySubscriptions();
+                .AddInMemorySubscriptions()
+                .AddSorting()
+                .AddFiltering()
+                .AddProjections();
+
 
             var constr = builder.Configuration.GetConnectionString("Default")
                     ?? throw new InvalidOperationException("No Connection String");

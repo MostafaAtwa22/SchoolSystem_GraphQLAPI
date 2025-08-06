@@ -13,6 +13,10 @@ namespace ShcoolGraphQL.Schema.Student
             _unitOfWork = unitOfWork;
         }
 
+        [UsePaging(IncludeTotalCount = true, DefaultPageSize = 10)]
+        [UseProjection]
+        [UseFiltering]
+        [UseSorting]
         public async Task<IEnumerable<StudentDto>> GetAllStudents()
         {
             var students = await _unitOfWork.Students.GetAllAsync();

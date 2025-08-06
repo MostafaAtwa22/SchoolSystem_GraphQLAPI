@@ -13,6 +13,11 @@ namespace ShcoolGraphQL.Schema.Department
             _unitOfWork = unitOfWork;
         }
 
+
+        [UsePaging(IncludeTotalCount = true, DefaultPageSize = 10)]
+        [UseProjection]
+        [UseFiltering]
+        [UseSorting]
         public async Task<IEnumerable<DepartmentDto>> GetAllDepartments()
         {
             var departments = await _unitOfWork.Departments.GetAllAsync();

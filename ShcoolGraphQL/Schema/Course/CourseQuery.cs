@@ -13,6 +13,11 @@ namespace ShcoolGraphQL.Schema.Course
             _unitOfWork = unitOfWork;
         }
 
+
+        [UsePaging(IncludeTotalCount = true, DefaultPageSize = 10)]
+        [UseProjection]
+        [UseFiltering]
+        [UseSorting]
         public async Task<IEnumerable<CourseDto>> GetAllCourses()
         {
             var courses = await _unitOfWork.Courses.GetAllAsync();
