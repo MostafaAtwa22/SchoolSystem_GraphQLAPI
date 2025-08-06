@@ -1,5 +1,7 @@
-﻿using SchoolGraphQL.Entities.Dtos;
+﻿using HotChocolate.Subscriptions;
+using SchoolGraphQL.Entities.Dtos;
 using SchoolGraphQL.Entities.Interfaces;
+using ShcoolGraphQL.Schema;
 
 namespace SchoolGraphQL.Schema.Course
 {
@@ -13,7 +15,7 @@ namespace SchoolGraphQL.Schema.Course
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<CourseDto> CreateCourse(CourseDto dto)
+        public async Task<CourseDto> CreateCourse(CourseDto dto, [Service]ITopicEventSender topicEventSender)
         {
             var course = new SchoolGraphQL.Entities.Models.Course
             {
@@ -24,10 +26,11 @@ namespace SchoolGraphQL.Schema.Course
             await _unitOfWork.Courses.AddAsync(course);
             await _unitOfWork.Complete();
 
+            await topicEventSender.SendAsync(nameof(Subscription.CourseCreate), dto);
             return dto;
         }
 
-        public async Task<CourseDto> UpdateCourse(CourseDto dto, int id)
+        public async Task<CourseDto> UpdateCourse(CourseDto dto, int id, [Service] ITopicEventSender topicEventSender)
         {
             var course = await _unitOfWork.Courses.GetByIdAsync(id);
             if (course is null)
@@ -39,10 +42,12 @@ namespace SchoolGraphQL.Schema.Course
             _unitOfWork.Courses.Update(course);
             await _unitOfWork.Complete();
 
+            var courseUpdateTopic = $"{id}_{nameof(Subscription.CourseUpdate)}";
+            await topicEventSender.SendAsync(courseUpdateTopic, dto);
             return dto;
         }
 
-        public async Task<CourseDto> DeleteCourse(int id)
+        public async Task<CourseDto> DeleteCourse(int id, [Service] ITopicEventSender topicEventSender)
         {
             var course = await _unitOfWork.Courses.GetByIdAsync(id);
             if (course is null)
@@ -51,11 +56,15 @@ namespace SchoolGraphQL.Schema.Course
             _unitOfWork.Courses.Delete(course);
             await _unitOfWork.Complete();
 
-            return new CourseDto
+            var dto = new CourseDto
             {
                 Title = course.Title,
                 DepartmentId = course.DepartmentId
             };
+
+            var courseDeleteTopic = $"{id}_{nameof(Subscription.CourseDelete)}";
+            await topicEventSender.SendAsync(courseDeleteTopic, dto);
+            return dto;
         }
     }
 }

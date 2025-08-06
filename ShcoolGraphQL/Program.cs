@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using SchoolGraphQL.DataAccess.Data;
 using SchoolGraphQL.DataAccess.Repositories;
@@ -15,22 +15,22 @@ namespace ShcoolGraphQL
 {
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services
                 .AddGraphQLServer()
                 .AddQueryType<Query>()
+                .AddMutationType<Mutation>()
+                .AddSubscriptionType<Subscription>()
                 .AddTypeExtension<DepartmentQuery>()
                 .AddTypeExtension<CourseQuery>()
                 .AddTypeExtension<StudentQuery>()
-                .AddMutationType<Mutation>() 
-                .AddTypeExtension<StudentMutation>() 
+                .AddTypeExtension<StudentMutation>()
                 .AddTypeExtension<CourseMutation>()
-                .AddTypeExtension<DepartmentMutation>();
-
-
+                .AddTypeExtension<DepartmentMutation>()
+                .AddInMemorySubscriptions();
 
             var constr = builder.Configuration.GetConnectionString("Default")
                     ?? throw new InvalidOperationException("No Connection String");
@@ -60,10 +60,16 @@ namespace ShcoolGraphQL
                 });
             });
 
-            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 
             var app = builder.Build();
+
+            // ✅ Enable dev exception page (optional but helpful)
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseDeveloperExceptionPage();
+            }
 
             // Seed data
             using (var scope = app.Services.CreateScope())
@@ -75,6 +81,7 @@ namespace ShcoolGraphQL
 
             // WebSockets for subscriptions
             app.UseWebSockets();
+            app.UseRouting();
 
             // CORS middleware
             app.UseCors("AllowAll");

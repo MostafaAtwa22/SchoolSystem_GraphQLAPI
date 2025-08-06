@@ -1,5 +1,7 @@
-﻿using SchoolGraphQL.Entities.Dtos;
+﻿using HotChocolate.Subscriptions;
+using SchoolGraphQL.Entities.Dtos;
 using SchoolGraphQL.Entities.Interfaces;
+using ShcoolGraphQL.Schema;
 
 namespace SchoolGraphQL.Schema.Department
 {
@@ -13,7 +15,7 @@ namespace SchoolGraphQL.Schema.Department
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<DepartmentDto> CreateDepartment(DepartmentDto dto)
+        public async Task<DepartmentDto> CreateDepartment(DepartmentDto dto, [Service] ITopicEventSender topicEventSender)
         {
             var department = new SchoolGraphQL.Entities.Models.Department
             {
@@ -24,10 +26,11 @@ namespace SchoolGraphQL.Schema.Department
             await _unitOfWork.Departments.AddAsync(department);
             await _unitOfWork.Complete();
 
+            await topicEventSender.SendAsync(nameof(Subscription.DepartmentCreate), dto);
             return dto;
         }
 
-        public async Task<DepartmentDto> UpdateDepartment(DepartmentDto dto, int id)
+        public async Task<DepartmentDto> UpdateDepartment(DepartmentDto dto, int id, [Service] ITopicEventSender topicEventSender)
         {
             try
             {
@@ -41,6 +44,8 @@ namespace SchoolGraphQL.Schema.Department
                 _unitOfWork.Departments.Update(department);
                 await _unitOfWork.Complete();
 
+                var departmentUpdateTopic = $"{department.Id}_{nameof(Subscription.DepartmentUpdate)}";
+                await topicEventSender.SendAsync(departmentUpdateTopic, dto);
                 return dto;
             }
             catch (Exception ex)
@@ -55,7 +60,7 @@ namespace SchoolGraphQL.Schema.Department
         }
 
 
-        public async Task<DepartmentDto> DeleteDepartment(int id)
+        public async Task<DepartmentDto> DeleteDepartment(int id, [Service] ITopicEventSender topicEventSender)
         {
             var department = await _unitOfWork.Departments.GetByIdAsync(id);
             if (department is null)
@@ -64,11 +69,15 @@ namespace SchoolGraphQL.Schema.Department
             _unitOfWork.Departments.Delete(department);
             await _unitOfWork.Complete();
 
-            return new DepartmentDto
+            var dto = new DepartmentDto
             {
                 Name = department.Name,
                 Description = department.Description
             };
+
+            var departmentDeleteTopic = $"{department.Id}_{nameof(Subscription.DepartmentDelete)}";
+            await topicEventSender.SendAsync(departmentDeleteTopic, dto);
+            return dto;
         }
     }
 }
