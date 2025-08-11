@@ -1,10 +1,14 @@
-﻿using HotChocolate.Subscriptions;
+﻿using FirebaseAdminAuthentication.DependencyInjection.Models;
+using HotChocolate.Authorization;
+using HotChocolate.Subscriptions;
 using SchoolGraphQL.Entities.Dtos;
 using SchoolGraphQL.Entities.Interfaces;
 using ShcoolGraphQL.Schema;
+using System.Security.Claims;
 
 namespace SchoolGraphQL.Schema.Course
 {
+    [Authorize(Policy = "IsAdmin")]
     [ExtendObjectType("Mutation")]
     public class CourseMutation
     {
@@ -15,8 +19,12 @@ namespace SchoolGraphQL.Schema.Course
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<CourseDto> CreateCourse(CourseDto dto, [Service]ITopicEventSender topicEventSender)
+        public async Task<CourseDto> CreateCourse(CourseDto dto, [Service]ITopicEventSender topicEventSender, ClaimsPrincipal claimsPrincipal)
         {
+            string userId = claimsPrincipal.FindFirstValue(FirebaseUserClaimType.ID)!;
+            string email = claimsPrincipal.FindFirstValue(FirebaseUserClaimType.EMAIL)!;
+            string username = claimsPrincipal.FindFirstValue(FirebaseUserClaimType.USERNAME)!;
+            string verified = claimsPrincipal.FindFirstValue(FirebaseUserClaimType.EMAIL_VERIFIED)!;
             var course = new SchoolGraphQL.Entities.Models.Course
             {
                 Title = dto.Title,

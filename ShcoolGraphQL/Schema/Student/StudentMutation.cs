@@ -1,10 +1,12 @@
-﻿using HotChocolate.Subscriptions;
+﻿using HotChocolate.Authorization;
+using HotChocolate.Subscriptions;
 using SchoolGraphQL.Entities.Dtos;
 using SchoolGraphQL.Entities.Interfaces;
 using SchoolGraphQL.Entities.Models;
 
 namespace ShcoolGraphQL.Schema.Student
 {
+    [Authorize]
     [ExtendObjectType("Mutation")]
     public class StudentMutation
     {

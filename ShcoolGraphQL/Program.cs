@@ -10,6 +10,9 @@ using ShcoolGraphQL.Schema.Course;
 using ShcoolGraphQL.Schema;
 using SchoolGraphQL.Schema.Course;
 using SchoolGraphQL.Schema.Department;
+using FirebaseAdminAuthentication.DependencyInjection.Extensions;
+using FirebaseAdmin;
+using FirebaseAdminAuthentication.DependencyInjection.Models;
 
 namespace ShcoolGraphQL
 {
@@ -33,7 +36,8 @@ namespace ShcoolGraphQL
                 .AddInMemorySubscriptions()
                 .AddSorting()
                 .AddFiltering()
-                .AddProjections();
+                .AddProjections()
+                .AddAuthorization();
 
 
             var constr = builder.Configuration.GetConnectionString("Default")
@@ -49,10 +53,16 @@ namespace ShcoolGraphQL
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            // Add Authentication services
-            builder.Services.AddAuthentication();
-            builder.Services.AddAuthorization();
+            builder.Services.AddSingleton(FirebaseApp.Create());
+            builder.Services.AddFirebaseAuthentication();
 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("IsAdmin", policy =>
+                {
+                    policy.RequireClaim(FirebaseUserClaimType.EMAIL, "test@gmail.com");
+                });
+            });
             // Add CORS
             builder.Services.AddCors(options =>
             {
